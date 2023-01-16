@@ -13,11 +13,17 @@ object Main {
 }
 
 class Chamber {
-    // Needs a better way to store existing shapes
+    val chamberContents = List[ChamberRow]()
+    var lastRow = -1
     
     def freezeShape(shape: Shape) {
         
     }    
+}
+
+class ChamberRow(val height: Int) {
+    val width: Int = 7
+    
 }
 
 class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
@@ -39,6 +45,5 @@ object ShapeType extends Enumeration {
 }
 
 object Move extends Enumeration {
-    type Move = Value
     val Left, Right = Value
 }
