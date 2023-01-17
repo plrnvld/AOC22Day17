@@ -27,17 +27,29 @@ class ChamberRow(val height: Int) {
 }
 
 class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
-    def canMove(move: Move.Value, chamber: Chamber) {
+    def flatPoints(topLeft: Point = Point(0,0)) = Array(Point(topLeft.x,0), Point(topLeft.x+1,0), Point(topLeft.x+2,0), Point(topLeft.x+3,0))
+
+    // ############ Add more points
+    
+    def canMove(move: Move.Value, chamber: Chamber): Boolean = {
         if (move == Move.Left) {
-            
+            true // ##########
         } else {
-            
+            true // ##########
         }
+    }
+
+    def freezeToRows(rowsToAddTo: List[ChamberRow]) = {
+        val level3 = rowsToAddTo(3)
+        val level2 = rowsToAddTo(2)
+        val level1 = rowsToAddTo(1)
+        val level0 = rowsToAddTo(0)
+        
+        
     }
 }
 
-class Point(val x: Int, val y: Int) {
-    
+case class Point(val x: Int, val y: Int) {    
 }
 
 object ShapeType extends Enumeration {
