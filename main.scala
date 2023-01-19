@@ -1,23 +1,37 @@
 import scala.io.Source
+import scala.collection.mutable.ListBuffer
 
 object Main {
-  def main(args: Array[String]): Unit = {
-    val source = Source.fromFile("Example.txt")
-    val moves = source.getLines().next.toList
-      .map(c => if (c == '<') Move.Left else Move.Right)
+    def main(args: Array[String]): Unit = {
+        val source = Source.fromFile("Example.txt")
+        val moves = source.getLines().next.toList
+            .map(c => if (c == '<') Move.Left else Move.Right)
       
-    for (move <- moves) {
-        println(move)
+        val chamber = new Chamber()
+        chamber.chamberRows += new ChamberRow(0)
+        chamber.chamberRows += new ChamberRow(1)
+        chamber.chamberRows += new ChamberRow(2)
+        chamber.chamberRows += new ChamberRow(3)
+        chamber.chamberRows += new ChamberRow(4)
+
+        val cross = new Shape(Point(1,2), ShapeType.Cross)
+        chamber.freeze(cross)
+        val flat = new Shape(Point(1,4), ShapeType.Flat)
+        chamber.printChamber(Some(cross))
     }
-  }
 }
 
 class Chamber {
-    val chamberRows = List[ChamberRow]() // Lowest one first
+    val chamberRows = ListBuffer[ChamberRow]() // Lowest one first
     var lastRow = -1
     
-    def freezeShape(shape: Shape) {
-        
+    def freeze(shape: Shape) {
+
+        val shapeType = shape.shapeType.Value
+        for (point <- shape.points()) {
+            println(s"> Freezing $shapeType, $point")
+            freezePoint(point)
+        }
     }
 
     def printChamber(currentShape: Option[Shape]) = {    
@@ -27,10 +41,20 @@ class Chamber {
         
         println("+-------+")
     }
+
+    def rowForHeight(height: Int): ChamberRow = {
+        println(s"> Searching for height $height")
+        chamberRows.find(r => r.height == height).get
+    }
+
+    def freezePoint(point: Point) {
+        val row = rowForHeight(point.y)
+        row.rowValues(point.x) = true
+    }
 }
 
 class ChamberRow(val height: Int) {
-    var rowValues: List[Boolean] = List.fill(7)(false)
+    var rowValues: ListBuffer[Boolean] = ListBuffer.fill(7)(false)
 
     def printRow(currentShape: Option[Shape]) = {
         val shapePoints = currentShape match {
@@ -48,35 +72,37 @@ class ChamberRow(val height: Int) {
         
         println()
     }
+
+    
 }
 
 class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
-    def flatPoints(topLeft: Point = Point(0,0)) = {
+    private def flatPoints(topLeft: Point) = {
         val bl = topLeft
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x+2,bl.y), Point(bl.x+3,bl.y))
     }
     
-    def crossPoints(topLeft: Point = Point(0,0)) = {
+    private def crossPoints(topLeft: Point) = {
         val bl = topLeft.addY(-2)
         List(Point(bl.x+1,bl.y), Point(bl.x,bl.y+1), Point(bl.x+1,bl.y+1), Point(bl.x+2,bl.y+1),Point(bl.x+1,bl.y+2))
     }
     
-    def anglePoints(topLeft: Point = Point(0,0)) = {
+    private def anglePoints(topLeft: Point) = {
         val bl = topLeft.addY(-2)
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x+2,bl.y), Point(bl.x+2,bl.y+1),Point(bl.x+2,bl.y+2))
     }
 
-    def verticalPoints(topLeft: Point = Point(0,0)) = {
+    private def verticalPoints(topLeft: Point) = {
         val bl = topLeft.addY(-3)
         List(Point(bl.x,bl.y), Point(bl.x,bl.y+1), Point(bl.x,bl.y+2), Point(bl.x,bl.y+3))
     }
 
-    def blockPoints(topLeft: Point = Point(0,0)) = {
+    private def blockPoints(topLeft: Point) = {
         val bl = topLeft.addY(-1)
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x,bl.y+1), Point(bl.x+1,bl.y+1))
     }
 
-    def points(tl: Point): List[Point] = 
+    def points(tl: Point = Point(0,0)): List[Point] = 
         shapeType match {
             case ShapeType.Flat => flatPoints(tl)
             case ShapeType.Cross => crossPoints(tl)
@@ -97,15 +123,6 @@ class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
             val nextTopLeft = topLeft.addX(1)
             points(nextTopLeft).exists(p => p.x > 6)
         }
-    }
-
-    def freezeToRows(rowsToAddTo: List[ChamberRow]) = {
-        val level3 = rowsToAddTo(3)
-        val level2 = rowsToAddTo(2)
-        val level1 = rowsToAddTo(1)
-        val level0 = rowsToAddTo(0)
-        
-        
     }
 }
 
