@@ -17,7 +17,7 @@ object Main {
         val cross = new Shape(Point(1,2), ShapeType.Cross)
         chamber.freeze(cross)
         val flat = new Shape(Point(1,4), ShapeType.Flat)
-        chamber.printChamber(Some(cross))
+        chamber.printChamber(Some(flat))
     }
 }
 
@@ -26,10 +26,7 @@ class Chamber {
     var lastRow = -1
     
     def freeze(shape: Shape) {
-
-        val shapeType = shape.shapeType.Value
         for (point <- shape.points()) {
-            println(s"> Freezing $shapeType, $point")
             freezePoint(point)
         }
     }
@@ -43,7 +40,6 @@ class Chamber {
     }
 
     def rowForHeight(height: Int): ChamberRow = {
-        println(s"> Searching for height $height")
         chamberRows.find(r => r.height == height).get
     }
 
@@ -76,7 +72,7 @@ class ChamberRow(val height: Int) {
     
 }
 
-class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
+class Shape(var topLeft: Point, val shapeType: ShapeType.Value) {
     private def flatPoints(topLeft: Point) = {
         val bl = topLeft
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x+2,bl.y), Point(bl.x+3,bl.y))
@@ -102,7 +98,7 @@ class Shape(var topLeft: Point, shapeType: ShapeType.Value) {
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x,bl.y+1), Point(bl.x+1,bl.y+1))
     }
 
-    def points(tl: Point = Point(0,0)): List[Point] = 
+    def points(tl: Point = topLeft): List[Point] = 
         shapeType match {
             case ShapeType.Flat => flatPoints(tl)
             case ShapeType.Cross => crossPoints(tl)
