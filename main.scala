@@ -6,29 +6,70 @@ object Main {
         val source = Source.fromFile("Example.txt")
         val moves = source.getLines().next.toList
             .map(c => if (c == '<') Move.Left else Move.Right)
+
+        val shapeOrder = List[ShapeType.Value](ShapeType.Flat, ShapeType.Cross, ShapeType.Angle, ShapeType.Vertical, ShapeType.Block)
       
         val chamber = new Chamber()
-        chamber.chamberRows += new ChamberRow(0)
-        chamber.chamberRows += new ChamberRow(1)
-        chamber.chamberRows += new ChamberRow(2)
-        chamber.chamberRows += new ChamberRow(3)
-        chamber.chamberRows += new ChamberRow(4)
 
-        val cross = new Shape(Point(1,2), ShapeType.Cross)
-        chamber.freeze(cross)
-        val flat = new Shape(Point(1,4), ShapeType.Flat)
-        chamber.printChamber(Some(flat))
+        for (i <- 1 to 10) {
+            val newShapeType = shapeOrder((i - 1) % shapeOrder.length)
+            println()
+            println(s"Shape $i ($newShapeType):")
+            
+            val start = chamber.addRowsForNewRoundAndGetStart(newShapeType)
+            val shape = new Shape(start, newShapeType)
+
+            var frozen = false
+            while (!frozen) {
+                if (shape.canMoveDown(chamber))
+                    shape.moveDown()
+                else {
+                    chamber.freeze(shape)
+                    frozen = true
+                }
+            }
+
+            chamber.printChamber(Some(shape))
+        }        
     }
 }
 
 class Chamber {
     val chamberRows = ListBuffer[ChamberRow]() // Lowest one first
     var lastRow = -1
-    
+    var highestRock = -1
+
+    private def shapeHeight(shapeType: ShapeType.Value): Int = 
+        shapeType match {
+            case ShapeType.Flat => 1
+            case ShapeType.Cross => 3
+            case ShapeType.Angle => 3
+            case ShapeType.Vertical => 4
+            case ShapeType.Block => 2
+        }
+
+    def addRowsForNewRoundAndGetStart(shapeType: ShapeType.Value): Point = {
+        val newStartHeight = highestRock + 3 + shapeHeight(shapeType)
+        
+        for (height <- (lastRow + 1) to newStartHeight)
+            chamberRows += new ChamberRow(height)
+
+        lastRow = newStartHeight
+
+        Point(2, newStartHeight)
+    }
+
     def freeze(shape: Shape) {
         for (point <- shape.points()) {
             freezePoint(point)
         }
+    }
+
+    def isOccupied(point: Point): Boolean ={
+        if (point.y > lastRow)
+            return false;
+
+        chamberRows(point.y).isOccupied(point.x)
     }
 
     def printChamber(currentShape: Option[Shape]) = {    
@@ -46,6 +87,9 @@ class Chamber {
     def freezePoint(point: Point) {
         val row = rowForHeight(point.y)
         row.rowValues(point.x) = true
+
+        if (point.y > highestRock)
+            highestRock = point.y
     }
 }
 
@@ -69,7 +113,7 @@ class ChamberRow(val height: Int) {
         println()
     }
 
-    
+    def isOccupied(x: Int): Boolean = rowValues(x)
 }
 
 class Shape(var topLeft: Point, val shapeType: ShapeType.Value) {
@@ -98,6 +142,15 @@ class Shape(var topLeft: Point, val shapeType: ShapeType.Value) {
         List(Point(bl.x,bl.y), Point(bl.x+1,bl.y), Point(bl.x,bl.y+1), Point(bl.x+1,bl.y+1))
     }
 
+    def bottomRight(): Point = 
+        shapeType match {
+            case ShapeType.Flat => topLeft.addX(3)
+            case ShapeType.Cross => topLeft.add(Point(2, -2))
+            case ShapeType.Angle => topLeft.add(Point(2, -2))
+            case ShapeType.Vertical => topLeft.addY(-3)
+            case ShapeType.Block => topLeft.add(Point(1, -1))
+        }
+
     def points(tl: Point = topLeft): List[Point] = 
         shapeType match {
             case ShapeType.Flat => flatPoints(tl)
@@ -109,17 +162,44 @@ class Shape(var topLeft: Point, val shapeType: ShapeType.Value) {
 
     def pointsOnHeight(height: Int): List[Point] = points(topLeft).filter(p => p.y == height)
 
-    def canMove(move: Move.Value, chamber: Chamber): Boolean = {
-        if (move == Move.Left) {
-            // ### Add collision detection
-            val nextTopLeft = topLeft.addX(-1)
-            points(nextTopLeft).exists(p => p.x < 0)
-        } else {
-            // ### Add collision detection
-            val nextTopLeft = topLeft.addX(1)
-            points(nextTopLeft).exists(p => p.x > 6)
-        }
+    def canMoveLeft(chamber: Chamber): Boolean = {
+        val nextTopLeft = topLeft.addX(-1)
+        val pts = points(nextTopLeft)
+
+        if (pts.exists(p => p.x < 0))
+            return false;
+
+        !givesCollision(pts, chamber)
     }
+
+    def canMoveRight(chamber: Chamber): Boolean = {
+        val nextTopLeft = topLeft.addX(1)
+        val pts = points(nextTopLeft)
+
+        if (pts.exists(p => p.x > 6))
+            return false;
+
+        !givesCollision(pts, chamber)
+    }
+
+    def canMoveDown(chamber: Chamber): Boolean = {
+        val nextTopLeft = topLeft.addY(-1)
+        val pts = points(nextTopLeft)
+
+        if (pts.exists(p => p.y < 0))
+            return false;
+
+        !givesCollision(pts, chamber)
+    }
+
+    def moveLeft() = topLeft = topLeft.addX(-1)
+
+    def moveRight() = topLeft = topLeft.addX(1)
+
+    def moveDown() = topLeft = topLeft.addY(-1)
+
+    def givesCollision(points: List[Point], chamber: Chamber): Boolean = 
+        points.exists(p => chamber.isOccupied(p))
 }
 
 case class Point(val x: Int, val y: Int) {
