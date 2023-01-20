@@ -13,7 +13,7 @@ object Main {
       
         val chamber = new Chamber()
 
-        // Every 1750 steps the pattern repeats!
+        // Every 1750 steps the pattern repeats! and 2769 get added
 
         // [521, 3043] All values true for y=826, shape is Flat
         // [1346, 7817] All values true for y=2130, shape is Flat
@@ -32,7 +32,16 @@ object Main {
         // [8591, 9187] All values true for y=13707, shape is Flat
         // [9271, 3043] All values true for y=14806, shape is Flat
 
-        for (i <- 1 to 10000) {
+        val divider = 1000000000000L / 1750L
+        val remainder = 1000000000000L % 1750L
+        val mult = 571428571L * 2796L
+        val res = mult + 1182L
+        
+        println(s"Divider: $divider, Remainder: $remainder, Mult: $mult, Res: $res")
+
+        // Divider: 571428571, Remainder: 750
+
+        for (i <- 1 to 750) {
             val newShapeType = shapeOrder((i - 1) % shapeOrder.length)
             // println()
             // println(s"Shape $i ($newShapeType):")
